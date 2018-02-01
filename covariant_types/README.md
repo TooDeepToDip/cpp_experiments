@@ -1,11 +1,11 @@
-==Covariant types==
+# Covariant types
 
 If you using OOP and programming with interfaces, you can face with dynamic casting need. Sad but true. Specially if you are not so good architector.
 
 But in some cases you can define type on the spot even if using common base class. For example, you have hierarchically depended objects of different classes. And for visualisation, you inherit them from base node. But in other part of code each object knows what is its "parent".
 It's time to covariant types! Each of objects can return base node and really parent at once. Almost.
 
-===Simple (degenerate) case===
+## Simple (degenerate) case
 
 Inheritance and dependency schemes match.
 
@@ -29,7 +29,7 @@ A& parentOfC = c.parent();
 // and using base functionality
 ```
 
-===Normal case===
+## Normal case
 
 For inheritance scheme:
 ```
