@@ -31,10 +31,13 @@ int main()
   A arr2[] = { { 1, 'c' }, { 2, 'a' }, { 2, 'b' } };
   std::list<A> incorrect_list(arr2, arr2 + sizeof(arr2)); // incorrect!!!
   std::list<A> correct_list(arr2, arr2 + sizeof(arr2) / sizeof(*arr2));
+  std::list<A> simple_list(h::begin(arr2), h::end(arr2)); // too simple!!!
   std::cout << "incorrect_list :" << std::endl;
   print(incorrect_list);
   std::cout << "correct_list :" << std::endl;
   print(correct_list);
+  std::cout << "simple_list :" << std::endl;
+  print(simple_list);
   std::cout << std::endl << "---arrays---" << std::endl;
   std::cout << "arr :" << std::endl;
   print(arr);
