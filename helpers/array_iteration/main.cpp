@@ -43,7 +43,7 @@ int main()
   print(arr);
   std::cout << "arr2 :" << std::endl;
   print(arr2);
-  // or
+  // or since c++11
   //for(auto it = arr2, end = h::end(arr2); it != end; ++it)
   //{
   //  std::cout << *it << std::endl;
