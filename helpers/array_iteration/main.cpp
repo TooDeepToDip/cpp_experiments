@@ -5,17 +5,25 @@
   template <class T, size_t N>
 void print(const T(& l)[N])
 {
+  std::cout << '{';
   namespace h = array_helpers;
   for(auto it = l, end = h::end(l); it != end; ++it)
-    std::cout << *it << std::endl;
+  {
+    if(it != h::begin(l)) std::cout << ", ";
+    std::cout << *it;
+  }
+  std::cout << '}' << std::endl;
 }
 
 void print(const std::list<A>& l)
 {
+  std::cout << '{';
   for(auto it = l.begin(), end = l.end(); it != end; ++it)
   {
-    std::cout << *it << std::endl;
+    if(it != l.begin()) std::cout << ", ";
+    std::cout << *it;
   }
+  std::cout << '}' << std::endl;
 }
 
 int main()
