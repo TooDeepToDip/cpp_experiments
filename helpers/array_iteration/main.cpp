@@ -22,17 +22,15 @@ int main()
 {
   namespace h = array_helpers;
   int arr[] = { 1, 2, 3, 4, 5, 6 };
-  A arr2[] = { { 1, 'c' }, { 2, 'a' }, { 2, 'b' } };
-  std::list<A> incorrect_list(arr2, arr2 + sizeof(arr2)); // incorrect!!!
-  std::list<A> correct_list(arr2, arr2 + sizeof(arr2) / sizeof(*arr2));
-  A tmp = { 2, 'a' };
-  A tmp2 = { 3, 'a' };
   std::cout << "---byte count---" << std::endl;
   std::cout << "sizeof arr = " << sizeof(arr) << std::endl;
   std::cout << "sizeof *arr = " << sizeof(*arr) << std::endl;
   std::cout << "wrong len = " << sizeof(arr) << std::endl;
   std::cout << "true len = " << sizeof(arr) / sizeof(*arr) << std::endl;
   std::cout << "---lists---" << std::endl;
+  A arr2[] = { { 1, 'c' }, { 2, 'a' }, { 2, 'b' } };
+  std::list<A> incorrect_list(arr2, arr2 + sizeof(arr2)); // incorrect!!!
+  std::list<A> correct_list(arr2, arr2 + sizeof(arr2) / sizeof(*arr2));
   std::cout << "incorrect_list :" << std::endl;
   print(incorrect_list);
   std::cout << "correct_list :" << std::endl;
@@ -54,6 +52,8 @@ int main()
   std::cout << "in arr found 7? "
     << ((std::find(arr, h::end(arr), 7) != h::end(arr)) ?
         "true" : "false") << std::endl;
+  A tmp = { 2, 'a' };
+  A tmp2 = { 3, 'a' };
   std::cout << "in arr2 found " << tmp << "? "
     << ((std::find(arr2, h::end(arr2), tmp) != h::end(arr2)) ?
     "true" : "false") << std::endl;
