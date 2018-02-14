@@ -20,6 +20,12 @@ namespace type_helpers
         }
         return tname;
     }
+
+    template<typename T>
+    std::string type_name(const T&)
+    {
+      return type_name<T>();
+    }
 }
 
 #endif /* TYPE_HELPERS_H */

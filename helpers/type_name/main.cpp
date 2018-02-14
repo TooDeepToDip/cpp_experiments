@@ -15,7 +15,7 @@ int main()
   YetAnotherClassWNTDName val2;
   AClassWhatNeedsToDemangleName * p_val2 = &val2;
   std::cout
-    << "fst: " << type_helpers::type_name<typeof(val1)>() << "\n"
-    << "snd: " << type_helpers::type_name<typeof(val2)>() << "\n"
-    << "ptr: " << type_helpers::type_name<typeof(p_val2)>() << std::endl;
+    << "fst: " << type_helpers::type_name(val1) << "\n"
+    << "snd: " << type_helpers::type_name(val2) << "\n"
+    << "ptr: " << type_helpers::type_name(p_val2) << std::endl;
 }
