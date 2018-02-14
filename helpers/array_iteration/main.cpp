@@ -15,7 +15,27 @@ void print(const T(& l)[N])
   std::cout << '}' << std::endl;
 }
 
-void print(const std::list<A>& l)
+template<typename T>
+void print(const T& t)
+{
+  std::cout << t << std::endl;
+}
+
+template<typename T, template <typename, typename = std::allocator<T> > class C>
+void print(const C<T>& l)
+{
+  std::cout << '{';
+  for(auto it = l.begin(), end = l.end(); it != end; ++it)
+  {
+    if(it != l.begin()) std::cout << ", ";
+    std::cout << *it;
+  }
+  std::cout << '}' << std::endl;
+}
+
+template<typename T
+  , template <typename, typename = std::less<T>, typename = std::allocator<T> > class C>
+void print(const C<T>& l)
 {
   std::cout << '{';
   for(auto it = l.begin(), end = l.end(); it != end; ++it)
@@ -53,7 +73,7 @@ int main()
   A arr2[] = { { 1, 'c' }, { 2, 'a' }, { 2, 'b' } };
   std::list<A> incorrect_list(arr2, arr2 + sizeof(arr2)); // incorrect!!!
   std::list<A> correct_list(arr2, arr2 + sizeof(arr2) / sizeof(*arr2));
-  std::list<A> simple_list(h::begin(arr2), h::end(arr2)); // too simple!!!
+  std::list<A> simple_list = h::list(arr2); // too simple!!!
   PRINT(incorrect_list);
   PRINT(correct_list);
   PRINT(simple_list);
@@ -76,4 +96,10 @@ int main()
   BOOL_PRINT(h::contains(arr, 7));
   BOOL_PRINT(h::contains(arr2, tmp));
   BOOL_PRINT(h::contains(arr2, tmp2));
+  std::vector<A> vec = h::vector(arr2);
+  PRINT(vec.at(2));
+  std::deque<A> deq = h::deque(arr2);
+  PRINT(deq.at(0));
+  std::set<A> set = h::set(arr2);
+  PRINT(set);
 }

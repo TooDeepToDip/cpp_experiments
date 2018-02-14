@@ -9,6 +9,13 @@ struct A
   char b;
 };
 
+bool operator<(const A& lhs, const A& rhs)
+{
+  if(lhs.a == rhs.a)
+    return lhs.b < rhs.b;
+  return lhs.a < rhs.a;
+}
+
 bool operator==(const A& lhs, const A& rhs)
 {
   return lhs.a == rhs.a and lhs.b == rhs.b;
