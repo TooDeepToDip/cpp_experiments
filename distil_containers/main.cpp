@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& out, const B& b)
 }
 
 template<typename T1, typename AccessF, typename SizeF, typename T2>
-T2& collect(T1& obj, AccessF get, SizeF size, T2& to)
+T2& collect(T1& obj, AccessF T1::*get, SizeF T1::*size, T2& to)
 {
   for(size_t i = 0; i < (obj.*size)(); ++i)
     to.push_back((obj.*get)(i));
@@ -58,11 +58,7 @@ struct WrapperAbstract
   virtual ~WrapperAbstract() {}
   virtual size_t count() const = 0;
   virtual B* get_element(size_t i) = 0;
-  //virtual const B* get_element(size_t i) const = 0; FIXME HERE error because compiler cannot resolve overloading function
-  // main.cpp:42:5: note:   template argument deduction/substitution failed:
-  // main.cpp:88:74: note:   couldn't deduce template parameter ‘AccessF’
-  // or
-  // main.cpp:42:5: note: candidate template ignored: couldn't infer template argument 'AccessF'
+  virtual const B* get_element(size_t i) const = 0; // now compiler can resolve overloading function (#tag1)
   std::deque<B*> lb;
 };
 
@@ -84,7 +80,7 @@ struct Wrapper : public WrapperAbstract
   }
   size_t count() const { return lb.size(); }
   B* get_element(size_t i) { return lb[i]; }
-  //const B* get_element(size_t i) const { return lb[i]; }
+  const B* get_element(size_t i) const { return lb[i]; }
 };
 
 int main()
@@ -98,8 +94,10 @@ int main()
   //std::list<A*> la;
   //std::copy(lb.begin(), lb.end(), std::back_inserter(la));
   std::list<B*> lb;
+  // If obj has overloaded by cv-qualifiers methods (e.g. get_element()) we need explicitly specify template
+  // instead of call (#tag1):
   //collect(w, &Wrapper::get_element, &Wrapper::count, lb);
-  collect(*wp, &WrapperAbstract::get_element, &WrapperAbstract::count, lb);
+  collect<WrapperAbstract, B* (size_t i) >(*wp, &WrapperAbstract::get_element, &WrapperAbstract::count, lb);
   print_container(std::cout, lb);
 
   std::list<A*> la;
