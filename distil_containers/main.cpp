@@ -55,6 +55,7 @@ T2& distil(const T1& from, T2& to)
 
 struct WrapperAbstract
 {
+  virtual ~WrapperAbstract() {}
   virtual size_t count() const = 0;
   virtual B* get_element(size_t i) = 0;
   //virtual const B* get_element(size_t i) const = 0; FIXME HERE error because compiler cannot resolve overloading function
@@ -67,10 +68,19 @@ struct WrapperAbstract
 
 struct Wrapper : public WrapperAbstract
 {
+  static Wrapper getWrapper() { return Wrapper(); }
   Wrapper()
   {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     for(int i = 0; i < 3; ++i)
       lb.push_back(new B(i));
+  }
+  ~Wrapper()
+  {
+    typedef std::deque<B*> C;
+    for(C::const_iterator ci = lb.begin(); ci != lb.end(); ++ci)
+      delete *ci;
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
   }
   size_t count() const { return lb.size(); }
   B* get_element(size_t i) { return lb[i]; }
@@ -90,10 +100,13 @@ int main()
   std::list<B*> lb;
   //collect(w, &Wrapper::get_element, &Wrapper::count, lb);
   collect(*wp, &WrapperAbstract::get_element, &WrapperAbstract::count, lb);
+  print_container(std::cout, lb);
+
   std::list<A*> la;
   distil(lb, la);
   print_container(std::cout, la);
   std::list<A*> va;
   distil(lb, va);
   print_container(std::cout, va);
+  delete wp;
 }
