@@ -38,6 +38,10 @@ std::ostream& operator<<(std::ostream& out, const B& b)
   return out << "B = { " << (const A&)b << ", " << b.b << " }";
 }
 
+/// collect elements from obj via getter T1::*get() and size T1::*size()
+//  into T2 via push_back()
+//  T1 hasn't const qualifier because it allows to use collect to const referece,
+//  but it allows also using collect() with temporary objects (#tag2)
 template<typename T1, typename AccessF, typename SizeF, typename T2>
 T2& collect(T1& obj, AccessF T1::*get, SizeF T1::*size, T2& to)
 {
@@ -98,6 +102,10 @@ int main()
   // instead of call (#tag1):
   //collect(w, &Wrapper::get_element, &Wrapper::count, lb);
   collect<WrapperAbstract, B* (size_t i) >(*wp, &WrapperAbstract::get_element, &WrapperAbstract::count, lb);
+  // Error: if Wrapper has ownership to elemets,
+  // they will be deleted before using via lb in print_container() (#tag2)
+  //collect<WrapperAbstract, B* (size_t i) const>(
+  //    Wrapper::getWrapper(), &WrapperAbstract::get_element, &WrapperAbstract::count, lb);
   print_container(std::cout, lb);
 
   std::list<A*> la;
