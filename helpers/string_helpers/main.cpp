@@ -54,8 +54,12 @@ void replace_string()
 
 int main()
 {
+  std::cout << "---trim---" << std::endl;
   trim();
+  std::cout << "---join---" << std::endl;
   split_join();
+  std::cout << "---modify---" << std::endl;
   modify();
+  std::cout << "---replace---" << std::endl;
   replace_string();
 }

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <list>
+#include <iterator>
 #include <sstream>
 #include <cstdarg>
 
@@ -18,18 +19,19 @@ namespace string
     typedef std::list<std::string> stringlist;
 
     stringlist split(const std::string& s, const std::string& delimiter);
-    std::string join(const stringlist& list, const std::string& delimiter);
 
-    template <typename T,
-              template<typename=T, typename=std::allocator<T> > class C>
-    std::string join2(const C<T> &objs, const std::string &delimeter)
+    template <typename Container>
+    std::string join(const Container& c, const std::string& delimiter)
     {
         std::stringstream ss;
-        std::string delim = "";
-        for (typename C<T>::const_iterator it = objs.begin(), end = objs.end(); it != end; ++it)
+        typedef typename Container::const_iterator ci;
+        ci beg = c.begin();
+        if(beg != c.end())
         {
-            ss << delim << *it;
-            delim = delimeter;
+          ss << *beg;
+          std::advance(beg, 1);
+          for(ci it = beg, end = c.end(); it != end; ++it)
+            ss << delimiter << *it;
         }
         return ss.str();
     }

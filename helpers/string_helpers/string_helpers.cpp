@@ -45,17 +45,6 @@ namespace string
         return list;
     }
 
-    std::string join(const stringlist& list, const std::string& delimiter)
-    {
-        std::stringstream ss;
-        for(stringlist::const_iterator it = list.begin(), end = list.end(); it != end;)
-        {
-            ss << *it;
-            if((++it) != end) ss << delimiter;
-        }
-        return ss.str();
-    }
-
     bool contains(const std::string& origin, const std::string& substr)
     {
         return origin.find(substr) != std::string::npos;
