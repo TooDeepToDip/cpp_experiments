@@ -1,6 +1,5 @@
 #include <iostream>
 #include <cassert>
-//#include <typeindex> c++11 only
 #include <map>
 
 #define PRINT(out, x) \
@@ -15,14 +14,14 @@
     std::cout << __PRETTY_FUNCTION__ << std::endl; \
   } while(0) \
 
-class IApplication {};
+class IApplication;
 
 template<typename T>
 class Repository
 {
 public:
-  virtual bool save(const IApplication&, T&) { return true; }
-  virtual bool load(const IApplication&, T&) { return true; }
+  virtual bool save(const IApplication&, const T&) { return true; }
+  virtual bool load(const IApplication&, const T&) { return true; }
   virtual ~Repository() {}
 };
 
@@ -33,27 +32,11 @@ struct PostgresTag {};
 struct MockTag {};
 struct Mock2Tag {};
 
-enum Tag
-{
-  postgresql
-, mock
-};
-
 struct Object
 {
   int a;
   int b;
-  static void initialize_repo(Tag t);
-  static Repository<Object>& repo()
-  {
-    assert(m_repo);
-    return *m_repo;
-  }
-private:
-  static Repository<Object>* m_repo;
 };
-
-Repository<Object>* Object::m_repo = NULL;
 
 std::ostream& operator<<(std::ostream& out, const Object& o)
 {
@@ -68,17 +51,7 @@ struct AnotherObject
 {
   int c;
   int d;
-  static void initialize_repo(Tag t);
-  static Repository<AnotherObject>& repo()
-  {
-    assert(m_repo);
-    return *m_repo;
-  }
-private:
-  static Repository<AnotherObject>* m_repo;
 };
-
-Repository<AnotherObject>* AnotherObject::m_repo = NULL;
 
 std::ostream& operator<<(std::ostream& out, const AnotherObject& o)
 {
@@ -93,14 +66,14 @@ template<>
 class RepositoryTagged<Object, PostgresTag> : public Repository<Object>
 {
 public:
-  bool save(const IApplication&, Object& o)
+  bool save(const IApplication&, const Object& o)
   {
     PRINT_FN();
     std::cout << o << std::endl;
     return true;
   }
 
-  bool load(const IApplication&, Object& o)
+  bool load(const IApplication&, const Object& o)
   {
     PRINT_FN();
     std::cout << o << std::endl;
@@ -112,14 +85,14 @@ template<>
 class RepositoryTagged<AnotherObject, PostgresTag> : public Repository<AnotherObject>
 {
 public:
-  bool save(const IApplication&, AnotherObject& o)
+  bool save(const IApplication&, const AnotherObject& o)
   {
     PRINT_FN();
     std::cout << o << std::endl;
     return true;
   }
 
-  bool load(const IApplication&, AnotherObject& o)
+  bool load(const IApplication&, const AnotherObject& o)
   {
     PRINT_FN();
     std::cout << o << std::endl;
@@ -131,14 +104,14 @@ template<typename T>
 class RepositoryTagged<T, MockTag> : public Repository<T>
 {
 public:
-  bool save(const IApplication&, T&)
+  bool save(const IApplication&, const T&)
   {
     PRINT_FN();
     std::cout << "---skip---" << std::endl;
     return true;
   }
 
-  bool load(const IApplication&, T&)
+  bool load(const IApplication&, const T&)
   {
     PRINT_FN();
     std::cout << "---skip---" << std::endl;
@@ -146,59 +119,70 @@ public:
   }
 };
 
-void Object::initialize_repo(Tag t)
+class IApplication
 {
-  delete m_repo;
-  switch(t)
-  {
-    case postgresql:  m_repo = new RepositoryTagged<Object, PostgresTag>;
-                      break;
-    case mock:        m_repo = new RepositoryTagged<Object, MockTag>;
-                      break;
-    default:          m_repo = NULL;
-                      break;
-  }
-}
+public:
+  template<typename T>
+    static Repository<T>** repository_pp()
+    {
+      static Repository<T>* p_repo = NULL;
+      return &p_repo;
+    }
 
-void AnotherObject::initialize_repo(Tag t)
-{
-  delete m_repo;
-  switch(t)
-  {
-    case postgresql:  m_repo = new RepositoryTagged<AnotherObject, PostgresTag>;
-                      break;
-    case mock:        m_repo = new RepositoryTagged<AnotherObject, MockTag>;
-                      break;
-    default:          m_repo = NULL;
-                      break;
-  }
-}
+  template<typename T>
+    static Repository<T>& repository()
+    {
+      Repository<T>* p_repo = *(repository_pp<T>());
+      assert(p_repo);
+      return *p_repo;
+    }
+
+  template<typename T, typename Tag>
+    static Repository<T>& initialize_repo()
+    {
+      Repository<T>** pp = repository_pp<T>();
+      delete *pp;
+      *pp = NULL;
+      *pp = new RepositoryTagged<T, Tag>;
+      return repository<T>();
+    }
+
+  template<typename T>
+    static Repository<T>& get_repository()
+    {
+      if(!*(repository_pp<T>()))
+        return initialize_repo<T, PostgresTag>();
+      return repository<T>();
+    }
+
+  template<typename T>
+    static bool save(IApplication& a, const T& t)
+    {
+      return get_repository<T>().save(a, t);
+    }
+
+  template<typename T>
+    static bool load(IApplication& a, const T& t)
+    {
+      return get_repository<T>().load(a, t);
+    }
+};
 
 int main()
 {
-  //typedef std::map<std::type_index, Repository<Object>* > TypeRepositoryMap; // c++11 only
-  // map for repository type (tag) <-> object repository relation
-  //TypeRepositoryMap repo_map;
   IApplication a;
-  typedef RepositoryTagged<Object, PostgresTag> PG_Repo;
-  typedef RepositoryTagged<Object, MockTag> Mock_Repo;
-  PG_Repo pgrepo;
-  Mock_Repo mkrepo;
 
   Object o = { 3, 23 };
   AnotherObject n = { 33, 66 };
-  //Repository<Object>* repo = &pgrepo;
-  //repo->save(a, o);
-  //repo->load(a, o);
-  //repo = &mkrepo;
-  //repo->save(a, o);
-  //repo->load(a, o);
-  Object::initialize_repo(mock);
-  Object::repo().save(a, o);
-  Object::initialize_repo(postgresql);
-  Object::repo().save(a, o);
-  AnotherObject::initialize_repo(mock);
-  AnotherObject::repo().save(a, n);
-  AnotherObject::initialize_repo(postgresql);
-  AnotherObject::repo().save(a, n);
+
+  IApplication::save(a, o);
+  IApplication::save(a, n);
+  IApplication::initialize_repo<Object, MockTag>();
+  IApplication::initialize_repo<AnotherObject, MockTag>();
+  IApplication::save(a, o);
+  IApplication::save(a, n);
+  IApplication::initialize_repo<Object, PostgresTag>();
+  IApplication::initialize_repo<AnotherObject, PostgresTag>();
+  IApplication::save(a, o);
+  IApplication::save(a, n);
 }
