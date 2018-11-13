@@ -106,7 +106,7 @@ public:
   }
 };
 
-enum RepositoryTag
+enum RepositoryType
 {
   postgresql
 , mock
@@ -184,7 +184,7 @@ public:
       repository_pp<T>(NULL);
     }
 
-  static void setDefaultRepository(RepositoryTag t)
+  static void setDefaultRepository(RepositoryType t)
   {
     assert(t < tag_size);
       g_tag = t;
@@ -237,11 +237,11 @@ public:
     }
 private:
   const IApplication& m_app;
-  static RepositoryTag g_tag;
+  static RepositoryType g_tag;
   static std::list<Base *> g_holders;
 };
 
-RepositoryTag RepositoryManager::g_tag = postgresql;
+RepositoryType RepositoryManager::g_tag = postgresql;
 std::list<RepositoryManager::Base *> RepositoryManager::g_holders;
 
 int main()
