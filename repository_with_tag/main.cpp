@@ -17,16 +17,16 @@
 class IApplication;
 
 template<typename T>
-class Repository
+class IRepository
 {
 public:
   virtual bool save(const IApplication&, const T&) { return true; }
   virtual bool load(const IApplication&, const T&) { return true; }
-  virtual ~Repository() {}
+  virtual ~IRepository() {}
 };
 
 template<typename T, typename Tag>
-class RepositoryTagged;
+class Repository;
 
 struct PostgresTag {};
 struct MockTag {};
@@ -63,7 +63,7 @@ std::ostream& operator<<(std::ostream& out, const AnotherObject& o)
 }
 
 template<>
-class RepositoryTagged<Object, PostgresTag> : public Repository<Object>
+class Repository<Object, PostgresTag> : public IRepository<Object>
 {
 public:
   bool save(const IApplication&, const Object& o)
@@ -82,7 +82,7 @@ public:
 };
 
 template<>
-class RepositoryTagged<AnotherObject, PostgresTag> : public Repository<AnotherObject>
+class Repository<AnotherObject, PostgresTag> : public IRepository<AnotherObject>
 {
 public:
   bool save(const IApplication&, const AnotherObject& o)
@@ -101,7 +101,7 @@ public:
 };
 
 template<typename T>
-class RepositoryTagged<T, MockTag> : public Repository<T>
+class Repository<T, MockTag> : public IRepository<T>
 {
 public:
   bool save(const IApplication&, const T&)
@@ -130,40 +130,40 @@ class IApplication
 {
 public:
   template<typename T>
-    static Repository<T>** repository_pp()
+    static IRepository<T>** repository_pp()
     {
-      static Repository<T>* p_repo = NULL;
+      static IRepository<T>* p_repo = NULL;
       return &p_repo;
     }
 
   template<typename T>
-    static Repository<T>& repository()
+    static IRepository<T>& repository()
     {
-      Repository<T>* p_repo = *(repository_pp<T>());
+      IRepository<T>* p_repo = *(repository_pp<T>());
       assert(p_repo);
       return *p_repo;
     }
 
   template<typename T, typename Tag>
-    static Repository<T>& initialize_repo()
+    static IRepository<T>& initialize_repo()
     {
-      Repository<T>** pp = repository_pp<T>();
+      IRepository<T>** pp = repository_pp<T>();
       delete *pp;
       *pp = NULL;
-      *pp = new RepositoryTagged<T, Tag>;
+      *pp = new Repository<T, Tag>;
       return repository<T>();
     }
 
   template<typename T>
     static void shutdown_repo()
     {
-      Repository<T>** pp = repository_pp<T>();
+      IRepository<T>** pp = repository_pp<T>();
       delete *pp;
       *pp = NULL;
     }
 
   template<typename T>
-    static Repository<T>& get_repository()
+    static IRepository<T>& get_repository()
     {
       if(!*(repository_pp<T>()))
       {
