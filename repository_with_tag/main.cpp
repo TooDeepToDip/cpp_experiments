@@ -119,6 +119,13 @@ public:
   }
 };
 
+enum RepositoryTag
+{
+  postgresql
+, mock
+, tag_size
+};
+
 class IApplication
 {
 public:
@@ -148,10 +155,25 @@ public:
     }
 
   template<typename T>
+    static void shutdown_repo()
+    {
+      Repository<T>** pp = repository_pp<T>();
+      delete *pp;
+      *pp = NULL;
+    }
+
+  template<typename T>
     static Repository<T>& get_repository()
     {
       if(!*(repository_pp<T>()))
-        return initialize_repo<T, PostgresTag>();
+      {
+        switch(m_tag)
+        {
+          case mock: return initialize_repo<T, MockTag>();
+          case postgresql:
+          default: return initialize_repo<T, PostgresTag>();
+        }
+      }
       return repository<T>();
     }
 
@@ -166,7 +188,21 @@ public:
     {
       return get_repository<T>().load(a, t);
     }
+
+  static bool setDefaultRepository(RepositoryTag t)
+  {
+    if(t < tag_size)
+    {
+      m_tag = t;
+      return true;
+    }
+    return false;
+  }
+private:
+  static RepositoryTag m_tag;
 };
+
+RepositoryTag IApplication::m_tag = postgresql;
 
 int main()
 {
@@ -177,12 +213,19 @@ int main()
 
   IApplication::save(a, o);
   IApplication::save(a, n);
-  IApplication::initialize_repo<Object, MockTag>();
-  IApplication::initialize_repo<AnotherObject, MockTag>();
+  IApplication::shutdown_repo<Object>();
+  IApplication::shutdown_repo<AnotherObject>();
+  IApplication::setDefaultRepository(mock);
   IApplication::save(a, o);
   IApplication::save(a, n);
   IApplication::initialize_repo<Object, PostgresTag>();
+  IApplication::save(a, o);
+  IApplication::save(a, n);
   IApplication::initialize_repo<AnotherObject, PostgresTag>();
+  IApplication::save(a, o);
+  IApplication::save(a, n);
+  IApplication::initialize_repo<Object, MockTag>();
+  IApplication::initialize_repo<AnotherObject, MockTag>();
   IApplication::save(a, o);
   IApplication::save(a, n);
 }
