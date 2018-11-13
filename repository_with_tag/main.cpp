@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cassert>
-#include <map>
+#include <list>
+#include <memory>
 
 #define PRINT_FN() \
   do \
@@ -116,53 +117,99 @@ class IApplication {};
 
 class RepositoryManager
 {
+   struct Base
+   {
+     virtual void destroy() = 0;
+   };
+
+   template <typename T, typename Tag>
+   struct Holder
+      : Repository<T, Tag>, Base
+   {
+      void destroy()
+      {
+        RepositoryManager::shutdown_repo<T>();
+      }
+
+      ~Holder()
+      {
+        RepositoryManager::erase(self);
+      }
+
+      std::list<Base*>::iterator self;
+    };
+
   template<typename T>
-    static IRepository<T>** repository_pp()
+    static IRepository<T>* & repository_pp()
     {
-      static IRepository<T>* p_repo = NULL;
-      return &p_repo;
+      static IRepository<T> * p_repo;
+      return p_repo;
+    }
+
+  template<typename T>
+    static IRepository<T> * & repository_pp(IRepository<T> * p)
+    {
+      IRepository<T> * & p_repo = repository_pp<T>();
+      std::swap(p_repo, p);
+      delete p;
+      return p_repo;
     }
 
   template<typename T>
     static IRepository<T>& repository()
     {
-      IRepository<T>* p_repo = *(repository_pp<T>());
+      IRepository<T> * p_repo = repository_pp<T>();
       assert(p_repo);
       return *p_repo;
+    }
+
+    static void erase(std::list<Base*>::iterator it)
+    {
+      g_holders.erase(it);
     }
 
 public:
   template<typename T, typename Tag>
     static IRepository<T>& initialize_repo()
     {
-      IRepository<T>** pp = repository_pp<T>();
-      delete *pp;
-      *pp = NULL;
-      *pp = new Repository<T, Tag>;
-      return repository<T>();
+      std::auto_ptr< Holder<T, Tag> > p(new Holder<T, Tag>);
+      g_holders.push_front(p.get());
+      p->self = g_holders.begin();
+      return *repository_pp<T>(p.release());
     }
 
   template<typename T>
     static void shutdown_repo()
     {
-      IRepository<T>** pp = repository_pp<T>();
-      delete *pp;
-      *pp = NULL;
+      repository_pp<T>(NULL);
     }
 
   static void setDefaultRepository(RepositoryTag t)
   {
     assert(t < tag_size);
-      m_tag = t;
+      g_tag = t;
+  }
+
+  static void shutdown_all()
+  {
+      typedef std::list<Base*>::iterator iterator;
+
+      for(iterator it = g_holders.begin(); it != g_holders.end(); )
+      {
+          iterator next = it;
+          ++next;
+          (*it)->destroy();
+          it = next;
+      }
   }
 
 private:
   template<typename T>
     static IRepository<T>& get_repository()
     {
-      if(!*(repository_pp<T>()))
+      if(!repository_pp<T>())
       {
-        switch(m_tag)
+        switch(g_tag)
         {
           case mock: return initialize_repo<T, MockTag>();
           case postgresql:
@@ -190,10 +237,12 @@ public:
     }
 private:
   const IApplication& m_app;
-  static RepositoryTag m_tag;
+  static RepositoryTag g_tag;
+  static std::list<Base *> g_holders;
 };
 
-RepositoryTag RepositoryManager::m_tag = postgresql;
+RepositoryTag RepositoryManager::g_tag = postgresql;
+std::list<RepositoryManager::Base *> RepositoryManager::g_holders;
 
 int main()
 {
@@ -218,6 +267,10 @@ int main()
   repo.save(n);
   RepositoryManager::initialize_repo<Object, MockTag>();
   RepositoryManager::initialize_repo<AnotherObject, MockTag>();
+  repo.save(o);
+  repo.save(n);
+  RepositoryManager::shutdown_all();
+  RepositoryManager::setDefaultRepository(postgresql);
   repo.save(o);
   repo.save(n);
 }
