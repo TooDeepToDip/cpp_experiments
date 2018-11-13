@@ -2,12 +2,6 @@
 #include <cassert>
 #include <map>
 
-#define PRINT(out, x) \
-  do \
-  { \
-    out << ""#x" = " << x; \
-  } while(0)\
-
 #define PRINT_FN() \
   do \
   { \
@@ -40,11 +34,7 @@ struct Object
 
 std::ostream& operator<<(std::ostream& out, const Object& o)
 {
-  out << "{ ";
-  PRINT(out, o.a);
-  out << " ";
-  PRINT(out, o.b);
-  return out << " }";
+  return out << "{ " << o.a << ", " << o.b << " }";
 }
 
 struct AnotherObject
@@ -55,11 +45,7 @@ struct AnotherObject
 
 std::ostream& operator<<(std::ostream& out, const AnotherObject& o)
 {
-  out << "{ ";
-  PRINT(out, o.c);
-  out << " ";
-  PRINT(out, o.d);
-  return out << " }";
+  return out << "{ " << o.c << ", " << o.d << " }";
 }
 
 template<>
@@ -126,9 +112,10 @@ enum RepositoryTag
 , tag_size
 };
 
-class IApplication
+class IApplication {};
+
+class RepositoryManager
 {
-public:
   template<typename T>
     static IRepository<T>** repository_pp()
     {
@@ -144,6 +131,7 @@ public:
       return *p_repo;
     }
 
+public:
   template<typename T, typename Tag>
     static IRepository<T>& initialize_repo()
     {
@@ -162,6 +150,13 @@ public:
       *pp = NULL;
     }
 
+  static void setDefaultRepository(RepositoryTag t)
+  {
+    assert(t < tag_size);
+      m_tag = t;
+  }
+
+private:
   template<typename T>
     static IRepository<T>& get_repository()
     {
@@ -177,32 +172,28 @@ public:
       return repository<T>();
     }
 
+public:
+  RepositoryManager(const IApplication& app)
+    : m_app(app)
+  {}
+
   template<typename T>
-    static bool save(IApplication& a, const T& t)
+    bool save(const T& t)
     {
-      return get_repository<T>().save(a, t);
+      return get_repository<T>().save(m_app, t);
     }
 
   template<typename T>
-    static bool load(IApplication& a, const T& t)
+    bool load(const T& t)
     {
-      return get_repository<T>().load(a, t);
+      return get_repository<T>().load(m_app, t);
     }
-
-  static bool setDefaultRepository(RepositoryTag t)
-  {
-    if(t < tag_size)
-    {
-      m_tag = t;
-      return true;
-    }
-    return false;
-  }
 private:
+  const IApplication& m_app;
   static RepositoryTag m_tag;
 };
 
-RepositoryTag IApplication::m_tag = postgresql;
+RepositoryTag RepositoryManager::m_tag = postgresql;
 
 int main()
 {
@@ -211,21 +202,22 @@ int main()
   Object o = { 3, 23 };
   AnotherObject n = { 33, 66 };
 
-  IApplication::save(a, o);
-  IApplication::save(a, n);
-  IApplication::shutdown_repo<Object>();
-  IApplication::shutdown_repo<AnotherObject>();
-  IApplication::setDefaultRepository(mock);
-  IApplication::save(a, o);
-  IApplication::save(a, n);
-  IApplication::initialize_repo<Object, PostgresTag>();
-  IApplication::save(a, o);
-  IApplication::save(a, n);
-  IApplication::initialize_repo<AnotherObject, PostgresTag>();
-  IApplication::save(a, o);
-  IApplication::save(a, n);
-  IApplication::initialize_repo<Object, MockTag>();
-  IApplication::initialize_repo<AnotherObject, MockTag>();
-  IApplication::save(a, o);
-  IApplication::save(a, n);
+  RepositoryManager repo(a);
+  repo.save(o);
+  repo.save(n);
+  RepositoryManager::shutdown_repo<Object>();
+  RepositoryManager::shutdown_repo<AnotherObject>();
+  RepositoryManager::setDefaultRepository(mock);
+  repo.save(o);
+  repo.save(n);
+  RepositoryManager::initialize_repo<Object, PostgresTag>();
+  repo.save(o);
+  repo.save(n);
+  RepositoryManager::initialize_repo<AnotherObject, PostgresTag>();
+  repo.save(o);
+  repo.save(n);
+  RepositoryManager::initialize_repo<Object, MockTag>();
+  RepositoryManager::initialize_repo<AnotherObject, MockTag>();
+  repo.save(o);
+  repo.save(n);
 }
